@@ -1,0 +1,7 @@
+Flask==2.3.3
+python-dotenv==1.0.0
+Flask-CORS==4.0.0
+supabase-py>=1.0.3  # Or the latest version of the official Supabase Python client
+google-generativeai>=0.3.2 # Or latest
+gunicorn==21.2.0
+psycopg2-binary # For Supabase DB connection if directly using connection string
