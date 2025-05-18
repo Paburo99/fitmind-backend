@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-from ..db import get_db_client
-from ..auth_utils import token_required
+from db import get_db_client
+from auth_utils import token_required
 
 profile_bp = Blueprint('profile_bp', __name__)
 supabase = get_db_client()

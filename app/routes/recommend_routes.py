@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
-from ..db import get_db_client
-from ..auth_utils import token_required
-from ..gemini_service import generate_text_from_gemini
+from db import get_db_client
+from auth_utils import token_required
+from gemini_service import generate_text_from_gemini
 
 recommend_bp = Blueprint('recommend_bp', __name__)
 supabase = get_db_client()

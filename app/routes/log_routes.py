@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-from ..db import get_db_client
-from ..auth_utils import token_required
+from db import get_db_client
+from auth_utils import token_required
 from datetime import date
 
 log_bp = Blueprint('log_bp', __name__)

@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify
-from ..db import get_db_client
-from ..auth_utils import token_required
-from ..gemini_service import generate_text_from_gemini
+from db import get_db_client
+from auth_utils import token_required
+from gemini_service import generate_text_from_gemini
 from datetime import date, timedelta
 
 progress_bp = Blueprint('progress_bp', __name__)

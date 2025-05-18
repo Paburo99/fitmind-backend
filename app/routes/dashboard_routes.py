@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify
-from ..db import get_db_client
-from ..auth_utils import token_required
+from db import get_db_client
+from auth_utils import token_required
 from datetime import date, timedelta
 
 dashboard_bp = Blueprint('dashboard_bp', __name__)
