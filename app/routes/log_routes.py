@@ -25,22 +25,24 @@ def log_workout(current_user_id):
 
     try:
         # Insert workout_log
-        log_resp_data, log_resp_count = supabase.table('workout_logs').insert(workout_log).execute()
+        response = supabase.table('workout_logs').insert(workout_log).execute()
         
-        if not log_resp_data or not log_resp_data[1]:
-            return jsonify({'error': 'Failed to save workout log', 'details': log_resp_data[0] if log_resp_data else 'No response'}), 500
+        if response.error or not response.data:
+            error_detail = response.error.message if response.error else 'No data returned'
+            return jsonify({'error': 'Failed to save workout log', 'details': error_detail}), 500
         
-        workout_log_id = log_resp_data[1][0]['id']
+        workout_log_id = response.data[0]['id']
 
         # Insert exercise_details if any
         if exercises:
             for ex in exercises:
                 ex['workout_log_id'] = workout_log_id
             # Batch insert exercises
-            ex_resp_data, ex_resp_count = supabase.table('exercise_details').insert(exercises).execute()
-            if not ex_resp_data or not ex_resp_data[1]:
+            ex_response = supabase.table('exercise_details').insert(exercises).execute()
+            if ex_response.error or not ex_response.data:
                 # Log this error, but maybe don't fail the whole request if main log saved
-                print(f"Warning: Workout log saved (ID: {workout_log_id}), but failed to save some/all exercises.")
+                error_detail = ex_response.error.message if ex_response.error else 'No data returned for exercises'
+                print(f"Warning: Workout log saved (ID: {workout_log_id}), but failed to save some/all exercises. Error: {error_detail}")
 
         return jsonify({'message': 'Workout logged successfully', 'log_id': workout_log_id}), 201
 
@@ -68,10 +70,11 @@ def log_nutrition(current_user_id):
         'fat_g': data.get('fat_g')
     }
     try:
-        resp_data, resp_count = supabase.table('nutrition_logs').insert(nutrition_log).execute()
-        if resp_data and resp_data[1]:
-            return jsonify({'message': 'Nutrition logged successfully', 'log_id': resp_data[1][0]['id']}), 201
-        return jsonify({'error': 'Failed to log nutrition', 'details': resp_data[0] if resp_data else 'No response'}), 500
+        response = supabase.table('nutrition_logs').insert(nutrition_log).execute()
+        if response.data and not response.error:
+            return jsonify({'message': 'Nutrition logged successfully', 'log_id': response.data[0]['id']}), 201
+        error_detail = response.error.message if response.error else 'No data returned'
+        return jsonify({'error': 'Failed to log nutrition', 'details': error_detail}), 500
     except Exception as e:
         print(f"Error logging nutrition: {e}")
         return jsonify({'error': str(e)}), 500
@@ -87,13 +90,14 @@ def log_weight(current_user_id):
         'user_id': current_user_id,
         'date': data.get('date', date.today().isoformat()),
         'weight_kg': data.get('weight_kg'),
-        'notes': data.get('notes')
+        'notes': data.get('notes') # Added notes, ensure your table 'weight_tracker' has this column or remove if not
     }
     try:
-        resp_data, resp_count = supabase.table('weight_logs').insert(weight_log).execute()
-        if resp_data and resp_data[1]:
-            return jsonify({'message': 'Weight logged successfully', 'log_id': resp_data[1][0]['id']}), 201
-        return jsonify({'error': 'Failed to log weight', 'details': resp_data[0] if resp_data else 'No response'}), 500
+        response = supabase.table('weight_tracker').insert(weight_log).execute()
+        if response.data and not response.error:
+            return jsonify({'message': 'Weight logged successfully', 'log_id': response.data[0]['id']}), 201
+        error_detail = response.error.message if response.error else 'No data returned'
+        return jsonify({'error': 'Failed to log weight', 'details': error_detail}), 500
     except Exception as e:
         print(f"Error logging weight: {e}")
         return jsonify({'error': str(e)}), 500
@@ -111,10 +115,11 @@ def log_water(current_user_id):
         'amount_ml': data.get('amount_ml')
     }
     try:
-        resp_data, resp_count = supabase.table('water_logs').insert(water_log).execute()
-        if resp_data and resp_data[1]:
-            return jsonify({'message': 'Water intake logged successfully', 'log_id': resp_data[1][0]['id']}), 201
-        return jsonify({'error': 'Failed to log water intake', 'details': resp_data[0] if resp_data else 'No response'}), 500
+        response = supabase.table('water_intake_logs').insert(water_log).execute()
+        if response.data and not response.error:
+            return jsonify({'message': 'Water intake logged successfully', 'log_id': response.data[0]['id']}), 201
+        error_detail = response.error.message if response.error else 'No data returned'
+        return jsonify({'error': 'Failed to log water intake', 'details': error_detail}), 500
     except Exception as e:
         print(f"Error logging water: {e}")
         return jsonify({'error': str(e)}), 500
@@ -130,10 +135,11 @@ def get_workout_logs(current_user_id):
             query = query.eq('date', log_date_str)
         query = query.order('date', desc=True)
         
-        data, count = query.execute()
-        if data and data[1] is not None: # data[1] can be an empty list
-            return jsonify(data[1]), 200
-        return jsonify({'error': 'Error fetching workout logs or no logs found', 'details': data[0] if data else 'No response'}), 500
+        response = query.execute()
+        if response.data is not None and not response.error: # response.data can be an empty list
+            return jsonify(response.data), 200
+        error_detail = response.error.message if response.error else 'No data/error fetching workout logs'
+        return jsonify({'error': 'Error fetching workout logs or no logs found', 'details': error_detail}), 500
     except Exception as e:
         print(f"Error fetching workout logs: {e}")
         return jsonify({'error': str(e)}), 500
@@ -148,10 +154,11 @@ def get_nutrition_logs(current_user_id):
             query = query.eq('date', log_date_str)
         query = query.order('date', desc=True).order('created_at', desc=True) # Order by date then by time
         
-        data, count = query.execute()
-        if data and data[1] is not None:
-            return jsonify(data[1]), 200
-        return jsonify({'error': 'Error fetching nutrition logs or no logs found', 'details': data[0] if data else 'No response'}), 500
+        response = query.execute()
+        if response.data is not None and not response.error:
+            return jsonify(response.data), 200
+        error_detail = response.error.message if response.error else 'No data/error fetching nutrition logs'
+        return jsonify({'error': 'Error fetching nutrition logs or no logs found', 'details': error_detail}), 500
     except Exception as e:
         print(f"Error fetching nutrition logs: {e}")
         return jsonify({'error': str(e)}), 500
@@ -161,15 +168,16 @@ def get_nutrition_logs(current_user_id):
 def get_weight_logs(current_user_id):
     log_date_str = request.args.get('date') # expects YYYY-MM-DD
     try:
-        query = supabase.table('weight_logs').select('*').eq('user_id', current_user_id)
+        query = supabase.table('weight_tracker').select('*').eq('user_id', current_user_id) # Changed table name
         if log_date_str:
             query = query.eq('date', log_date_str)
         query = query.order('date', desc=True)
         
-        data, count = query.execute()
-        if data and data[1] is not None:
-            return jsonify(data[1]), 200
-        return jsonify({'error': 'Error fetching weight logs or no logs found', 'details': data[0] if data else 'No response'}), 500
+        response = query.execute()
+        if response.data is not None and not response.error:
+            return jsonify(response.data), 200
+        error_detail = response.error.message if response.error else 'No data/error fetching weight logs'
+        return jsonify({'error': 'Error fetching weight logs or no logs found', 'details': error_detail}), 500
     except Exception as e:
         print(f"Error fetching weight logs: {e}")
         return jsonify({'error': str(e)}), 500
@@ -179,15 +187,16 @@ def get_weight_logs(current_user_id):
 def get_water_logs(current_user_id):
     log_date_str = request.args.get('date') # expects YYYY-MM-DD
     try:
-        query = supabase.table('water_logs').select('*').eq('user_id', current_user_id)
+        query = supabase.table('water_intake_logs').select('*').eq('user_id', current_user_id) # Changed table name
         if log_date_str:
             query = query.eq('date', log_date_str)
         query = query.order('date', desc=True)
         
-        data, count = query.execute()
-        if data and data[1] is not None:
-            return jsonify(data[1]), 200
-        return jsonify({'error': 'Error fetching water logs or no logs found', 'details': data[0] if data else 'No response'}), 500
+        response = query.execute()
+        if response.data is not None and not response.error:
+            return jsonify(response.data), 200
+        error_detail = response.error.message if response.error else 'No data/error fetching water logs'
+        return jsonify({'error': 'Error fetching water logs or no logs found', 'details': error_detail}), 500
     except Exception as e:
         print(f"Error fetching water logs: {e}")
         return jsonify({'error': str(e)}), 500
