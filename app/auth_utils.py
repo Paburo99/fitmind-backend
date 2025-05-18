@@ -1,7 +1,7 @@
 from functools import wraps
 from flask import request, jsonify
 from supabase import Client
-from .db import get_db_client # Or initialize a client here per request
+from db import get_db_client # Or initialize a client here per request
 
 # This is a simplified version. Supabase client library handles JWT verification
 # when you set the session or use its methods with a user's token.

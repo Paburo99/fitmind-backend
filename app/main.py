@@ -1,12 +1,12 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
-from .config import Config
-from .routes.profile_routes import profile_bp
-from .routes.log_routes import log_bp
-from .routes.dashboard_routes import dashboard_bp
-from .routes.recommend_routes import recommend_bp
-from .routes.progress_routes import progress_bp
-from .db import get_db_client # To ensure it's initialized on startup
+from config import Config
+from routes.profile_routes import profile_bp
+from routes.log_routes import log_bp
+from routes.dashboard_routes import dashboard_bp
+from routes.recommend_routes import recommend_bp
+from routes.progress_routes import progress_bp
+from db import get_db_client # To ensure it's initialized on startup
 
 app = Flask(__name__)
 app.config.from_object(Config)

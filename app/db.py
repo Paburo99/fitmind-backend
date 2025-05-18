@@ -1,5 +1,5 @@
 from supabase import create_client, Client
-from .config import Config
+from config import Config
 
 try:
     supabase_client: Client = create_client(Config.SUPABASE_URL, Config.SUPABASE_SERVICE_ROLE_KEY) # Use service role for backend
