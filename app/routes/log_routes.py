@@ -90,7 +90,6 @@ def log_weight(current_user_id):
         'user_id': current_user_id,
         'date': data.get('date', date.today().isoformat()),
         'weight_kg': data.get('weight_kg'),
-        'notes': data.get('notes') # Added notes, ensure your table 'weight_tracker' has this column or remove if not
     }
     try:
         response = supabase.table('weight_tracker').insert(weight_log).execute()
