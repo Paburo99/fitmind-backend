@@ -12,6 +12,10 @@ def get_profile(current_user_id):
         # For .maybe_single(), the first variable in the unpacked result is the dict itself or None.
         response = supabase.table('profiles').select('*').eq('user_id', current_user_id).maybe_single().execute()
         
+        if response is None: # Add this check
+            print("Error: response from Supabase is None after execute() during profile get.")
+            return jsonify({'error': 'Database communication error (response was None)'}), 500
+
         if response.error:
             # Handle potential errors during the query execution itself
             error_message = response.error.message if hasattr(response.error, 'message') else str(response.error)
@@ -54,6 +58,10 @@ def upsert_profile(current_user_id):
         # Simpler: Check existence then insert or update
         check_response = supabase.table('profiles').select('user_id').eq('user_id', current_user_id).maybe_single().execute()
 
+        if check_response is None:
+            print("Error: check_response from Supabase is None after execute() during profile existence check.")
+            return jsonify({'error': 'Database communication error (check_response was None)'}), 500
+
         if check_response.error:
             error_message = check_response.error.message if hasattr(check_response.error, 'message') else str(check_response.error)
             return jsonify({'error': 'Failed to check existing profile', 'details': error_message}), 500
@@ -64,6 +72,10 @@ def upsert_profile(current_user_id):
         else: # Profile does not exist, so insert
             response = supabase.table('profiles').insert(profile_data).execute()
             status_code = 201
+
+        if response is None:
+            print("Error: response from Supabase is None after execute() during profile insert/update.")
+            return jsonify({'error': 'Database communication error (response was None)'}), 500
 
         if response.error:
             error_message = response.error.message if hasattr(response.error, 'message') else str(response.error)
