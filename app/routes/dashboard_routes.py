@@ -25,9 +25,6 @@ def get_dashboard_summary(current_user_id):
         if nut_response is None:
             print(f"Error fetching nutrition for dashboard: Supabase response was None. User: {current_user_id}, Date: {today_str}")
             # Decide if you want to return 500 or continue with default values
-        # elif nut_response.error:
-        #     print(f"Error fetching nutrition for dashboard: {nut_response.error.message}. User: {current_user_id}, Date: {today_str}")
-        #     # Decide if you want to return 500 or continue
         elif nut_response.data:
             for item in nut_response.data:
                 summary['calories_today'] += item.get('calories', 0) or 0
@@ -38,8 +35,6 @@ def get_dashboard_summary(current_user_id):
         
         if wo_response is None:
             print(f"Error fetching workouts for dashboard: Supabase response was None. User: {current_user_id}, Date: {today_str}")
-        # elif wo_response.error:
-        #     print(f"Error fetching workouts for dashboard: {wo_response.error.message}. User: {current_user_id}, Date: {today_str}")
         elif wo_response.count:
              summary['workouts_today_count'] = wo_response.count
         
@@ -48,8 +43,6 @@ def get_dashboard_summary(current_user_id):
 
         if lw_response is None:
             print(f"Error fetching latest weight for dashboard: Supabase response was None. User: {current_user_id}")
-        # elif lw_response.error:
-        #     print(f"Error fetching latest weight for dashboard: {lw_response.error.message}. User: {current_user_id}")
         elif lw_response.data: # lw_response.data is the dictionary itself if a record is found, or None
             summary['current_weight_kg'] = lw_response.data.get('weight_kg')
 
@@ -58,8 +51,6 @@ def get_dashboard_summary(current_user_id):
 
         if wi_response is None:
             print(f"Error fetching water intake for dashboard: Supabase response was None. User: {current_user_id}, Date: {today_str}")
-        # elif wi_response.error:
-        #     print(f"Error fetching water intake for dashboard: {wi_response.error.message}. User: {current_user_id}, Date: {today_str}")
         elif wi_response.data:
             for item in wi_response.data:
                  summary['water_intake_today_ml'] += item.get('amount_ml', 0) or 0
