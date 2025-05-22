@@ -9,7 +9,7 @@ supabase = get_db_client()
 @token_required
 def get_profile(current_user_id):
     try:
-        response = supabase.table('profiles').select('*').eq('user_id', current_user_id).maybe_single().execute()
+        response = supabase.table('profiles').select('*').eq('user_id', current_user_id).execute()
         
         if response is None: 
             print(f"Error getting profile: Supabase client returned None. User: {current_user_id}")
@@ -19,11 +19,21 @@ def get_profile(current_user_id):
             print(f"Error getting profile: Supabase response object malformed (missing 'data'). User: {current_user_id}")
             return jsonify({'error': 'Error fetching profile data', 'details': 'Malformed database response'}), 500
 
-        # For maybe_single(), response.data will be the dict or None
-        if response.data: 
-            return jsonify(response.data), 200
-        else:
+        # response.data will be a list.
+        # Empty list means not found.
+        # List with one item is a successful find.
+        # List with more than one item (if user_id should be unique) is an issue.
+
+        if len(response.data) == 1:
+            return jsonify(response.data[0]), 200
+        elif not response.data: # Empty list
             return jsonify({'message': 'Profile not found or not yet created.'}), 404
+        else:
+            # This case should ideally not happen if user_id is a unique constraint.
+            # But it's good to handle defensively.
+            print(f"Warning: Multiple profiles found for user_id {current_user_id} when expecting one or none.")
+            # You might return the first, or an error, depending on desired logic
+            return jsonify({'error': 'Inconsistent data: Multiple profiles found'}), 500
             
     except Exception as e:
         print(f"Error getting profile: {e}")
@@ -51,7 +61,7 @@ def upsert_profile(current_user_id):
     
     try:
         # Check existence
-        check_response = supabase.table('profiles').select('user_id').eq('user_id', current_user_id).maybe_single().execute()
+        check_response = supabase.table('profiles').select('user_id').eq('user_id', current_user_id).execute()
 
         if check_response is None:
             print(f"Error upserting profile: Supabase client returned None during existence check. User: {current_user_id}")
