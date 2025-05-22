@@ -9,7 +9,7 @@ supabase = get_db_client()
 @token_required
 def get_profile(current_user_id):
     try:
-        response = supabase.table('profiles').select('*').eq('user_id', current_user_id).maybe_single().execute()
+        response = supabase.table('profiles').select('*').eq('user_id', current_user_id).execute()
         
         if response is None: 
             print(f"Error getting profile: Supabase client returned None. User: {current_user_id}")
