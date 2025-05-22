@@ -51,7 +51,7 @@ def upsert_profile(current_user_id):
     
     try:
         # Check existence
-        check_response = supabase.table('profiles').select('user_id').eq('user_id', current_user_id).maybe_single().execute()
+        check_response = supabase.table('profiles').select('user_id').eq('user_id', current_user_id).execute()
 
         if check_response is None:
             print(f"Error upserting profile: Supabase client returned None during existence check. User: {current_user_id}")
