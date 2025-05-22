@@ -9,7 +9,7 @@ supabase = get_db_client()
 @token_required
 def get_profile(current_user_id):
     try:
-        response = supabase.table('profiles').select('*').eq('user_id', current_user_id).maybe_single().execute()
+        response = supabase.table('profiles').select('*').eq('user_id', current_user_id).execute()
         
         if response is None: 
             print(f"Error getting profile: Supabase client returned None. User: {current_user_id}")
@@ -51,7 +51,7 @@ def upsert_profile(current_user_id):
     
     try:
         # Check existence
-        check_response = supabase.table('profiles').select('user_id').eq('user_id', current_user_id).maybe_single().execute()
+        check_response = supabase.table('profiles').select('user_id').eq('user_id', current_user_id).execute()
 
         if check_response is None:
             print(f"Error upserting profile: Supabase client returned None during existence check. User: {current_user_id}")
