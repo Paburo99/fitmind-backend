@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from db import get_db_client
 from auth_utils import token_required
 from gemini_service import generate_text_from_gemini
@@ -10,8 +10,17 @@ supabase = get_db_client()
 @progress_bp.route('/progress/weight', methods=['GET'])
 @token_required
 def get_weight_progress(current_user_id):
+    days = request.args.get('days')
+    
     try:
-        response = supabase.table('weight_tracker').select('date, weight_kg').eq('user_id', current_user_id).order('date', desc=False).execute()
+        query = supabase.table('weight_tracker').select('date, weight_kg').eq('user_id', current_user_id)
+        
+        # Apply date filtering if days parameter is provided
+        if days and days != 'all':
+            cutoff_date = (date.today() - timedelta(days=int(days))).isoformat()
+            query = query.gte('date', cutoff_date)
+            
+        response = query.order('date', desc=False).execute()
         
         if response is None:
             print(f"Error fetching weight progress: Supabase client returned None. User: {current_user_id}")

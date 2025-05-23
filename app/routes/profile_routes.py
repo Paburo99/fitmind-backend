@@ -49,15 +49,21 @@ def get_profile(current_user_id):
 def upsert_profile(current_user_id):
     profile_data_req = request.json
     if not profile_data_req:
-        return jsonify({'error': 'No data provided'}), 400
-
-    # Add user_id from token
+        return jsonify({'error': 'No data provided'}), 400    # Add user_id from token
     profile_data_req['user_id'] = current_user_id
 
     required_fields = ['primary_goal', 'fitness_level', 'date_of_birth', 'gender', 'height_cm', 'initial_weight_kg', 'activity_level']
+    optional_fields = ['weekly_workout_goal', 'daily_activity_goal']
+    
     for field in required_fields:
         if field not in profile_data_req or profile_data_req[field] is None or str(profile_data_req[field]).strip() == '':
             return jsonify({'error': f'Missing or empty required field: {field}'}), 400
+    
+    # Set default values for optional goal fields if not provided
+    if 'weekly_workout_goal' not in profile_data_req or profile_data_req['weekly_workout_goal'] is None:
+        profile_data_req['weekly_workout_goal'] = 5
+    if 'daily_activity_goal' not in profile_data_req or profile_data_req['daily_activity_goal'] is None:
+        profile_data_req['daily_activity_goal'] = 3
     
     try:
         # Check existence
