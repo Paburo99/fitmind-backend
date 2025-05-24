@@ -133,36 +133,80 @@ def generate_fitness_insights(current_user_id):
         if not hasattr(workout_summary_resp, 'data'):
             print(f"Error generating insights: Supabase workout data response object malformed (missing 'data'). User: {current_user_id}")
             return jsonify({'error': 'Error generating insights', 'details': 'Malformed database response for workout data'}), 500
-        workout_summary_last_30_days = workout_summary_resp.data if workout_summary_resp.data else []
-
-        insights = [] 
-
-        prompt_parts = [
-            f"User Profile: Goal - {profile.get('primary_goal', 'Not set')}, Fitness Level - {profile.get('fitness_level', 'Not set')}."
-        ]
-
-        if weight_summary_last_30_days:
-            prompt_parts.append(f"Recent weight data (last 30 days, format: [{{'date': 'YYYY-MM-DD', 'weight_kg': KG}}]): {weight_summary_last_30_days}")
-        else:
-            prompt_parts.append("No weight data recorded in the last 30 days.")
-
-        if nutrition_summary_last_30_days:
-            prompt_parts.append(f"Recent nutrition summary (last 30 days - list of daily logs, format: [{{'date': 'YYYY-MM-DD', 'calories': CAL, ...}}]): {nutrition_summary_last_30_days}")
-        else:
-            prompt_parts.append("No nutrition data recorded in the last 30 days.")
-
-        if workout_summary_last_30_days:
-            prompt_parts.append(f"Recent workout summary (last 30 days - list of workouts, format: [{{'date': 'YYYY-MM-DD', 'type': TYPE, ...}}]): {workout_summary_last_30_days}")
-        else:
-            prompt_parts.append("No workout data recorded in the last 30 days.")
+        workout_summary_last_30_days = workout_summary_resp.data if workout_summary_resp.data else []        # Enhanced insights generation with comprehensive analysis
+        insights = []
         
-        prompt_parts.append(
-            "Based on all the provided data (user profile, weight, nutrition, and workouts over the last 30 days), "
-            "provide 2-3 encouraging and personalized fitness/health insights. "
-            "Also, include one actionable tip for improvement directly related to their primary goal and recent activity. "
-            "If there is very little data, acknowledge that and provide general encouragement to keep tracking."
-            "Phrase the insights as if you are an AI Fitness Coach."
-        )
+        # Calculate progress metrics
+        weight_trend = "stable"
+        weight_change = 0
+        if len(weight_summary_last_30_days) >= 2:
+            initial_weight = weight_summary_last_30_days[0]['weight_kg']
+            current_weight = weight_summary_last_30_days[-1]['weight_kg']
+            weight_change = current_weight - initial_weight
+            if weight_change > 1:
+                weight_trend = "increasing"
+            elif weight_change < -1:
+                weight_trend = "decreasing"
+        
+        # Calculate workout consistency
+        workout_days = len(set(w['date'] for w in workout_summary_last_30_days))
+        workout_types = list(set(w.get('type', 'Unknown') for w in workout_summary_last_30_days))
+        total_workout_time = sum(w.get('duration_minutes', 0) for w in workout_summary_last_30_days)
+        
+        # Calculate nutrition consistency  
+        nutrition_days = len(set(n['date'] for n in nutrition_summary_last_30_days))
+        avg_calories = sum(n.get('calories', 0) for n in nutrition_summary_last_30_days) / len(nutrition_summary_last_30_days) if nutrition_summary_last_30_days else 0
+        
+        # Build comprehensive AI coach prompt
+        prompt_parts = [
+            "🧠 AI FITNESS INSIGHTS COACH ROLE: You are an expert data analyst and personal trainer with deep knowledge in fitness psychology and behavior change. Provide meaningful, actionable insights.",
+            "",
+            f"👤 USER PROFILE ANALYSIS:",
+            f"• Primary Goal: {profile.get('primary_goal', 'Not specified')}",
+            f"• Fitness Level: {profile.get('fitness_level', 'Not specified')}",
+            f"• Starting Weight: {profile.get('initial_weight_kg', 'Not recorded')} kg" if profile.get('initial_weight_kg') else "• Starting Weight: Not recorded",
+            "",
+            f"📊 30-DAY PERFORMANCE METRICS:",
+            f"• Data Collection: {max(workout_days, nutrition_days)}/30 days tracked ({round(max(workout_days, nutrition_days)/30*100)}% consistency)",
+            f"• Workout Frequency: {workout_days} days active ({round(workout_days/30*100)}% of month)",
+            f"• Total Exercise Time: {total_workout_time} minutes ({round(total_workout_time/60, 1)} hours)",
+            f"• Workout Variety: {len(workout_types)} different types: {', '.join(workout_types) if workout_types else 'None'}",
+            f"• Nutrition Tracking: {nutrition_days} days logged ({round(nutrition_days/30*100)}% of month)",
+            f"• Average Daily Calories: {round(avg_calories)} kcal" if avg_calories > 0 else "• Average Daily Calories: No data",
+            f"• Weight Progress: {weight_trend.title()} ({weight_change:+.1f} kg change)" if weight_change != 0 else "• Weight Progress: Stable (no significant change)",
+            ""
+        ]
+        
+        # Add detailed data context
+        if weight_summary_last_30_days:
+            weight_entries = len(weight_summary_last_30_days)
+            prompt_parts.append(f"🏋️ WEIGHT DATA ({weight_entries} entries): {weight_summary_last_30_days}")
+        
+        if nutrition_summary_last_30_days:
+            prompt_parts.append(f"🍽️ NUTRITION DATA ({len(nutrition_summary_last_30_days)} entries - showing calories, protein, carbs, fat): {nutrition_summary_last_30_days}")
+        
+        if workout_summary_last_30_days:
+            prompt_parts.append(f"💪 WORKOUT DATA ({len(workout_summary_last_30_days)} sessions): {workout_summary_last_30_days}")
+        
+        prompt_parts.extend([
+            "",
+            "🎯 ANALYSIS REQUIREMENTS:",
+            "1. PROGRESS ASSESSMENT: Analyze trends, patterns, and alignment with their stated goal",
+            "2. BEHAVIORAL INSIGHTS: Identify strengths in their routine and areas needing attention", 
+            "3. MOTIVATION BOOST: Celebrate achievements and progress, no matter how small",
+            "4. ACTIONABLE GUIDANCE: Provide 1-2 specific, implementable recommendations",
+            "5. PERSONALIZATION: Reference their actual data points and goal in your insights",
+            "",
+            "📝 OUTPUT FORMAT (Return exactly 3-4 bullet points):",
+            "• Insight 1: Highlight a positive trend or achievement with specific data",
+            "• Insight 2: Identify a key pattern or area for improvement with constructive advice", 
+            "• Insight 3: Provide one specific, actionable recommendation for next week",
+            "• [Optional] Insight 4: Motivational perspective on their overall journey",
+            "",
+            "🌟 TONE: Encouraging, professional, data-driven, and personally relevant. Act as their supportive AI fitness coach who genuinely cares about their success.",
+            "",
+            "⚠️ IMPORTANT: If data is limited, focus on encouraging consistency in tracking and celebrating the commitment to start their fitness journey. Never criticize - always motivate!"
+        ])
         
         gemini_insight = generate_text_from_gemini(prompt_parts)
         
