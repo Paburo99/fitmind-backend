@@ -112,7 +112,7 @@ def get_meal_recommendation(current_user_id):
         primary_goal = profile.get('primary_goal', 'healthy eating')
         diet_prefs = profile.get('dietary_preferences', 'none')
         allergies = profile.get('allergies_intolerances', 'none')        # Fetch recent nutrition data to avoid repetition and provide variety
-        recent_meals_resp = supabase.table('nutrition_logs').select('date, meal_type, food_items, calories').eq('user_id', current_user_id).order('date', desc=True).limit(5).execute()
+        recent_meals_resp = supabase.table('nutrition_logs').select('date, meal_type, food_item_description, calories').eq('user_id', current_user_id).order('date', desc=True).limit(5).execute()
         recent_meals = recent_meals_resp.data if recent_meals_resp and hasattr(recent_meals_resp, 'data') else []
         
         # Get user's calorie and macro goals if available
@@ -138,21 +138,20 @@ def get_meal_recommendation(current_user_id):
             f"• Activity Level: {activity_level.title()}",
             f"• Meal Type: {meal_type.title()}",
             f"• Target Calorie Range: {calorie_range} calories",
-            "",
-            f"📊 RECENT MEAL HISTORY:" if recent_meals else "📊 MEAL HISTORY: Fresh start - design a nutritionally balanced meal!",
+            "",            f"📊 RECENT MEAL HISTORY:" if recent_meals else "📊 MEAL HISTORY: Fresh start - design a nutritionally balanced meal!",
         ]
         
         if recent_meals:
             recent_foods = []
             for meal in recent_meals[:3]:
-                food_items = meal.get('food_items', 'Unknown')
+                food_item_description = meal.get('food_item_description', 'Unknown')
                 date = meal.get('date', 'Unknown')
                 calories = meal.get('calories', 'N/A')
-                recent_foods.append(f"  • {food_items} ({calories} cal) - {date}")
+                recent_foods.append(f"  • {food_item_description} ({calories} cal) - {date}")
             prompt.extend(recent_foods)
             
             # Extract common ingredients to suggest variety
-            all_foods = ' '.join([meal.get('food_items', '') for meal in recent_meals]).lower()
+            all_foods = ' '.join([meal.get('food_item_description', '') for meal in recent_meals]).lower()
             common_proteins = ['chicken', 'beef', 'fish', 'salmon', 'tuna', 'eggs', 'tofu']
             recent_proteins = [p for p in common_proteins if p in all_foods]
             if recent_proteins:
