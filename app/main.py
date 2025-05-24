@@ -6,6 +6,7 @@ from routes.log_routes import log_bp
 from routes.dashboard_routes import dashboard_bp
 from routes.recommend_routes import recommend_bp
 from routes.progress_routes import progress_bp
+from routes.chat_routes import chat_bp
 from db import get_db_client # To ensure it's initialized on startup
 
 app = Flask(__name__)
@@ -29,6 +30,7 @@ app.register_blueprint(log_bp, url_prefix='/api') # /api/log/workout etc.
 app.register_blueprint(dashboard_bp, url_prefix='/api') # /api/dashboard/summary
 app.register_blueprint(recommend_bp, url_prefix='/api') # /api/recommend/workout
 app.register_blueprint(progress_bp, url_prefix='/api') # /api/progress/weight
+app.register_blueprint(chat_bp, url_prefix='/api') # /api/chat/context-aware
 
 @app.route('/')
 def home():
